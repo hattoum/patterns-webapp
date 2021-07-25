@@ -1,0 +1,30 @@
+<html>
+
+    <head>
+        <link rel="stylesheet" href="{{ url_for('static',filename='css/main.css')}}">
+    </head>
+
+    <body>
+        <div class="form">
+            <form action="/" method="POST" enctype="multipart/form-data">
+                <label for="login">Voctiv Email</label>
+                <input type="text" name="login" id="login">
+
+                <label for="pass">Voctiv Password</label>
+                <input type="password" name="password" id="password">
+
+                <label for="uuid">Agent UUID</label>
+                <input type="text" name="uuid" id="uuid">
+
+                <label for="lang">Language (en-GB, ar-EG, tr-TR, etc..)</label>
+                <input type="text" name="lang" id="lang">
+
+                <label for="sheet">Pattern Sheet</label>
+                <input type="file" name="sheet" id="sheet" accept=".xls,.xlsx,.csv">
+
+                <input type="submit" value="Test Patterns">
+            </form>
+        </div>
+    </body>
+
+</html>
