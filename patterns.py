@@ -65,6 +65,7 @@ def create_csv(login,password,uuid,lang,sheet):
         df = pd.read_excel(sheet, engine="openpyxl")
         df.replace(re.compile(".*(null|default).*",flags=re.IGNORECASE),np.nan,regex=True,inplace=True)
         df.dropna(inplace=True)
+        # print(df)
         return df
 
     def clean_entities(entities):
@@ -129,4 +130,4 @@ def create_csv(login,password,uuid,lang,sheet):
     output["matched"]=success
     # %%
     #Output the DataFrame to a csv with encoding utf-8 signed for Arabic
-    return output.set_index(pattern_col).to_csv(encoding='utf-8-sig')
+    return output.to_csv(encoding='utf-8-sig',index=False)
