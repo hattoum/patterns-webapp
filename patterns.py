@@ -5,7 +5,6 @@ from requests.models import HTTPBasicAuth
 import numpy as np
 import pandas as pd
 import re
-import io
 # %%
 #Get access token with a POST request and CMS credentials 
 def authenticate(username,password):

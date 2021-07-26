@@ -1,4 +1,4 @@
-from flask import Flask, render_template, url_for, request, redirect, Response
+from flask import Flask, render_template, url_for, request, Response
 from patterns import create_csv
 
 app = Flask(__name__)
