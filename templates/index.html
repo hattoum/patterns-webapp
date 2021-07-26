@@ -10,20 +10,25 @@
         <div class="form">
             <h1>Batch Pattern Testing</h1>
             <form action="/" method="POST" enctype="multipart/form-data">
-                <label for="login">Email</label>
-                <input type="text" name="login" id="login" required placeholder="email@voctiv.com">
+                <div class="column">
+                    <label for="login">Email</label>
+                    <input type="text" name="login" id="login" required placeholder="email@voctiv.com">
 
-                <label for="pass">Password</label>
-                <input type="password" name="password" id="password" required placeholder="*****">
-
-                <label for="uuid">Agent UUID</label>
-                <input type="text" name="uuid" id="uuid" required placeholder="UUID from agent settings">
-
-                <label for="lang">Language</label>
-                <input type="text" name="lang" id="lang" required placeholder="en-US">
-
-                <label for="sheet">Pattern Sheet </label>
-                <input type="file" name="sheet" id="sheet" accept=".xls,.xlsx,.csv" required>
+                    <label for="pass">Password</label>
+                    <input type="password" name="password" id="password" required placeholder="*****">
+                </div>
+                <div class="sperator"></div>
+                <div class="column">
+                    <label for="uuid">Agent UUID</label>
+                    <input type="text" name="uuid" id="uuid" required placeholder="UUID from agent settings">
+                    
+                    <label for="lang">Language</label>
+                    <input type="text" name="lang" id="lang" required placeholder="en-US">
+                    
+                    <label for="sheet">Pattern Sheet </label>
+                    <input type="file" name="sheet" id="sheet" accept=".xls,.xlsx,.csv" required>
+                </div>
+            
 
                 <button type="submit" value="Test Patterns">Test Pattern</button>
             </form>
