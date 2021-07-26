@@ -1,0 +1,19 @@
+.form{
+    /* display: flex; */
+    margin: auto auto;
+    margin-top: 3rem;
+    padding: 1rem;
+    flex-direction: column;
+    justify-content: space-evenly;
+    align-content: center;
+    align-items: center;
+    width: 15%;
+    /* background: #400080;
+    color: white; */
+    font-family: 'Navigo',Arial,sans-serif;
+    border-radius: 20px;
+}
+input{
+    margin-bottom:20px;
+    display: block;
+}
