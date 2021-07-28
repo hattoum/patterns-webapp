@@ -18,16 +18,18 @@ def create_csv(login,password,uuid,lang,sheet):
     token = auth_data["token"]
     params = {"agent_uuid":uuid}
     headers = {"Authorization":"Bearer " +token}
-    #TODO: get intents as well
-    res = requests.get("https://api-v3.neuro.net/api/v2/nlu/entity", params=params,headers=headers)
+    res_ent = requests.get("https://api-v3.neuro.net/api/v2/nlu/entity", params=params, headers=headers)
+    res_int = requests.get("https://api-v3.neuro.net/api/v2/nlu/intent", params=params, headers=headers)
 
     # %%
-    status = "successful" if res.status_code == 200 else "failed"
+    status = "successful" if (res_ent.status_code == 200 and res_int.status_code == 200) else "failed"
     print("Request "+status)
     # %%
     #Extract relevant data out of the response json
     relevant_columns = ["name","pattern","language"]
-    raw_data = pd.DataFrame(res.json()["data"],columns=relevant_columns)
+    raw_ent = pd.DataFrame(res_ent.json()["data"],columns=relevant_columns)
+    raw_int = pd.DataFrame(res_int.json()["data"],columns=relevant_columns)
+    raw_data = pd.concat((raw_ent,raw_int))
     # %%
     def split_raw_patterns(patterns):
         """Splits raw patterns into separate patterns and entity values"""
