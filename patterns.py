@@ -129,7 +129,7 @@ def create_csv(login,password,uuid,lang,sheet):
 
         success.append(matched)
 
-    output["matched"]=success
+    output["result"]=success
     # %%
     #Output the DataFrame to a csv with encoding utf-8 signed for Arabic
     return output.to_csv(encoding='utf-8-sig',index=False)
