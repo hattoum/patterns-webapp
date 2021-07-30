@@ -24,6 +24,7 @@ def create_csv(login,password,uuid,lang,sheet):
     # %%
     status = "successful" if (res_ent.status_code == 200 and res_int.status_code == 200) else "failed"
     print("Request "+status)
+    print(res_ent)
     # %%
     #Extract relevant data out of the response json
     relevant_columns = ["name","pattern","language"]
@@ -101,7 +102,10 @@ def create_csv(login,password,uuid,lang,sheet):
 
         for name in lang_df.index:
             for pattern in lang_df.loc[name]["pattern"]:
-                match = re.search(pattern[0], str_pattern,flags=re.IGNORECASE)
+                try:
+                    match = re.search(pattern[0], str_pattern,flags=re.IGNORECASE)
+                except:
+                    match = None
                 if(match!=None):
                     search.append([pattern[0],name+"="+str(pattern[1])])
                     break
