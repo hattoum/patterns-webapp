@@ -21,10 +21,13 @@ def create_csv(login,password,uuid,lang,sheet):
     res_ent = requests.get("https://api-v3.neuro.net/api/v2/nlu/entity", params=params, headers=headers)
     res_int = requests.get("https://api-v3.neuro.net/api/v2/nlu/intent", params=params, headers=headers)
 
+    
+
     # %%
-    status = "successful" if (res_ent.status_code == 200 and res_int.status_code == 200) else "failed"
-    print("Request "+status)
-    print(res_ent)
+    if(res_ent.status_code == 200 or res_int.status_code == 200):
+        print("Request successful")
+    else:
+        raise AssertionError("Failed to get data")    
     # %%
     #Extract relevant data out of the response json
     relevant_columns = ["name","pattern","language"]
@@ -53,9 +56,12 @@ def create_csv(login,password,uuid,lang,sheet):
     def format_by_lang(df,language):
         """Subsets response data by language and returns a DataFrame with the 
         name of the entity, associated patterns in a list of tuples, and language"""
-        lang_df = df[df["language"]==language].set_index("name")
-        lang_df["pattern"] = lang_df["pattern"].apply(split_and_group)
-        return lang_df
+        try:
+            lang_df = df[df["language"]==language].set_index("name")
+            lang_df["pattern"] = lang_df["pattern"].apply(split_and_group)
+            return lang_df
+        except:
+            raise AssertionError("Language \""+language+"\" not found in agent")
 
     # %%
     #Setting the df to use for matching
@@ -64,23 +70,31 @@ def create_csv(login,password,uuid,lang,sheet):
     def open_excel():
         """Opens excel sheet and removes empty cells
         returns a DataFrame with the pattern sentences and entity=value"""
-    
-        df = pd.read_excel(sheet, engine="openpyxl")
-        df.replace(re.compile(".*(null|default).*",flags=re.IGNORECASE),np.nan,regex=True,inplace=True)
-        df.dropna(inplace=True)
-        # print(df)
-        return df
+        try:
+            df = pd.read_excel(sheet, engine="openpyxl")
+            df.replace(re.compile(".*(null|default).*",flags=re.IGNORECASE),np.nan,regex=True,inplace=True)
+            df.dropna(inplace=True)
+        
+            return df
+        except:
+            raise AssertionError("Error opening excel sheet")
 
     def clean_entities(entities):
         """Splits entity column in a list of lists and strips out all unnecessary characters"""
-        split_pattern = re.split("\=\=?", entities)
-        plist = list(map(lambda x: re.sub("[\n\r\:\"\=]","",x),split_pattern))
-        return plist
+        try:
+            split_pattern = re.split("\=\=?", entities)
+            plist = list(map(lambda x: re.sub("[\n\r\:\"\=]","",x),split_pattern))
+            return plist
+        except:
+            raise AssertionError("Pattern sheet not formatted correctly")
 
     def clean_patterns(pattern):
         """Removes any non-word characters and spaces from pattern column"""
-        new_pattern = re.sub("[^\w\d\s:]"," ",pattern)
-        return new_pattern
+        try:
+            new_pattern = re.sub("[^\w\d\s:]"," ",pattern)
+            return new_pattern
+        except:
+            raise AssertionError("Pattern sheet not formatted correctly")
     # %%
     #Open script excel sheet and save entity and pattern column names
     df_raw = open_excel()
