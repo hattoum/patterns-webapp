@@ -12,7 +12,10 @@ def create_csv(login,password,uuid,lang,sheet):
     ext = "https://api-v3.neuro.net/api/v2/ext/auth"
     body = {"username":login,"password":password}
     post = requests.post(ext, auth=HTTPBasicAuth(body["username"],body["password"]))
-    auth_data = post.json()
+    try:
+        auth_data = post.json()
+    except:
+        raise Exception("Your email or password were entered incorrectly")
     # %%
     # Request entity data with token and agent uuid
     token = auth_data["token"]
@@ -27,7 +30,7 @@ def create_csv(login,password,uuid,lang,sheet):
     if(res_ent.status_code == 200 or res_int.status_code == 200):
         print("Request successful")
     else:
-        raise AssertionError("Failed to get data")    
+        raise AssertionError("Failed to get data. Make sure UUID includes no trailing or following characters")    
     # %%
     #Extract relevant data out of the response json
     relevant_columns = ["name","pattern","language"]
@@ -58,10 +61,11 @@ def create_csv(login,password,uuid,lang,sheet):
         name of the entity, associated patterns in a list of tuples, and language"""
         try:
             lang_df = df[df["language"]==language].set_index("name")
+            lang_df.iloc[0]
             lang_df["pattern"] = lang_df["pattern"].apply(split_and_group)
             return lang_df
         except:
-            raise AssertionError("Language \""+language+"\" not found in agent")
+            raise AssertionError("Language \""+language+"\" not found in agent.<br>Please make sure you are using the correct language code and the right agent UUID")
 
     # %%
     #Setting the df to use for matching
@@ -86,7 +90,7 @@ def create_csv(login,password,uuid,lang,sheet):
             plist = list(map(lambda x: re.sub("[\n\r\:\"\=]","",x),split_pattern))
             return plist
         except:
-            raise AssertionError("Pattern sheet not formatted correctly")
+            raise AssertionError("Pattern sheet not formatted correctly.")
 
     def clean_patterns(pattern):
         """Removes any non-word characters and spaces from pattern column"""
