@@ -75,7 +75,8 @@ def create_csv(login,password,uuid,lang,sheet):
         """Opens excel sheet and removes empty cells
         returns a DataFrame with the pattern sentences and entity=value"""
         try:
-            df = pd.read_excel(sheet, engine="openpyxl")
+            df = pd.read_excel(sheet, engine="openpyxl",usecols="A,B")
+            print(df)
             df.replace(re.compile(".*(null|default).*",flags=re.IGNORECASE),np.nan,regex=True,inplace=True)
             df.dropna(inplace=True)
         
