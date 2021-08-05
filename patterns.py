@@ -76,7 +76,6 @@ def create_csv(login,password,uuid,lang,sheet):
         returns a DataFrame with the pattern sentences and entity=value"""
         try:
             df = pd.read_excel(sheet, engine="openpyxl",usecols="A,B")
-            print(df)
             df.replace(re.compile(".*(null|default).*",flags=re.IGNORECASE),np.nan,regex=True,inplace=True)
             df.dropna(inplace=True)
         
@@ -88,7 +87,7 @@ def create_csv(login,password,uuid,lang,sheet):
         """Splits entity column in a list of lists and strips out all unnecessary characters"""
         try:
             split_pattern = re.split("\=\=?", entities)
-            plist = list(map(lambda x: re.sub("[\n\r\:\"\=]","",x),split_pattern))
+            plist = list(map(lambda x: re.sub("[\n\r\:\"\=\']","",x),split_pattern))
             return plist
         except:
             raise AssertionError("Pattern sheet not formatted correctly.")
@@ -155,4 +154,7 @@ def create_csv(login,password,uuid,lang,sheet):
     output["result"]=success
     # %%
     #Output the DataFrame to a csv with encoding utf-8 signed for Arabic
-    return output.to_csv(encoding='utf-8-sig',index=False)
+    dir = "output/results.xlsx"
+    output.to_excel(dir,"Results",encoding='utf-8-sig',index=False,engine="openpyxl")
+    return dir
+    # return output.to_csv(encoding='utf-8-sig',index=False)

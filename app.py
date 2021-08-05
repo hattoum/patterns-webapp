@@ -1,7 +1,8 @@
-from flask import Flask, render_template, url_for, request, Response, make_response
+from flask import Flask, render_template, url_for, request, Response, make_response, send_file
 from patterns import create_csv
 import codecs
 import pandas as pd
+import os
 
 app = Flask(__name__)
 app.config["UPLOAD_FOLDER"] = "/uploads"
@@ -17,9 +18,11 @@ def index():
         sheet = request.files["sheet"]
 
         try:
-            csv = create_csv(login,password,uuid,lang,sheet)
+            dir = create_csv(login,password,uuid,lang,sheet)
             #Encoding csv file with utf_8_sig for Arabic, Vietnamese, etc..
-            res = Response(csv.encode("utf-8-sig"),mimetype="text/csv;charset=UTF-8",headers={"Content-disposition":"attachment; filename=results.csv"})
+            # res = Response(csv.encode("utf-8-sig"),mimetype="text/csv;charset=UTF-8",headers={"Content-disposition":"attachment; filename=results.csv"})
+            res = send_file(dir)
+            os.remove(dir)
         except Exception as e:
             res = str(e)
 
