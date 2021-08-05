@@ -3,9 +3,13 @@ import requests
 from itertools import zip_longest
 from requests.models import HTTPBasicAuth
 import numpy as np
-import pandas as pd
 import re
 import os
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
+warnings.filterwarnings("ignore")
+import pandas as pd
+
 # %%
 def create_csv(login,password,uuid,lang,sheet):
     #Get access token with a POST request and CMS credentials 
@@ -43,15 +47,30 @@ def create_csv(login,password,uuid,lang,sheet):
         plist = re.split("(\"[A-Za-z0-9_]{1,25}\")",patterns)
         plist = list(map(lambda x: re.sub("[\n\r\:\"]","",x),plist))
         plist = list(map(lambda x: x.strip(),plist))
+    
         if(plist[-1]==""):
             plist.pop()
-        
-        return plist
 
+        # print(plist)
+        return plist
+    
+    
     def split_list_patterns(patterns):
         """Combines every 2 items (pattern, entity_value) in a list """
         args = [iter(patterns)] * 2
         return list(zip_longest(*args))
+
+    def validate_patterns(patterns):
+        errors = []
+        for p in patterns:
+            try:
+                re.compile(p[0])
+            except re.error:
+                errors.append(p)
+        
+        if errors != []:
+            return errors
+        
 
     #Combines the 2 functions above
     split_and_group = lambda x: split_list_patterns(split_raw_patterns(x))
@@ -70,6 +89,11 @@ def create_csv(login,password,uuid,lang,sheet):
     # %%
     #Setting the df to use for matching
     lang_df = format_by_lang(raw_data,lang)
+    validity_df = lang_df.pattern.apply(validate_patterns).dropna().to_frame()
+    validity_df.index = validity_df.index.rename("Entity/Intent")
+
+    print(validity_df)
+    # print(lang_df.pattern.apply(validate_patterns))
     # %%
     def open_excel():
         """Opens excel sheet and removes empty cells
@@ -82,6 +106,22 @@ def create_csv(login,password,uuid,lang,sheet):
             return df
         except:
             raise AssertionError("Error opening excel sheet")
+
+    def format_test_sheet(sheet,sep="\n"):
+        """Creates a new sheet with extra rows from multiple patterns on the same cell 
+        in the raw excel sheet"""
+        patterns = []
+        entities = []
+        columns = sheet.columns
+
+        for index, row in sheet.iterrows():
+            prompts = row[columns[0]].split("\n")
+            for prompt in prompts:
+                patterns.append(prompt)
+                entities.append(row[columns[1]])
+
+        return pd.DataFrame({"patterns":patterns,"entities":entities})
+
 
     def clean_entities(entities):
         """Splits entity column in a list of lists and strips out all unnecessary characters"""
@@ -101,7 +141,7 @@ def create_csv(login,password,uuid,lang,sheet):
             raise AssertionError("Pattern sheet not formatted correctly")
     # %%
     #Open script excel sheet and save entity and pattern column names
-    df_raw = open_excel()
+    df_raw = format_test_sheet(open_excel())
     entity_col = df_raw.columns[-1]
     pattern_col = df_raw.columns[0]
     # %%
@@ -155,6 +195,10 @@ def create_csv(login,password,uuid,lang,sheet):
     # %%
     #Output the DataFrame to a csv with encoding utf-8 signed for Arabic
     dir = "output/results.xlsx"
-    output.to_excel(dir,"Results",encoding='utf-8-sig',index=False,engine="openpyxl")
+    
+    with pd.ExcelWriter(dir) as writer:
+        output.to_excel(writer,"Results",encoding='utf-8-sig',index=False,engine="openpyxl")
+        validity_df.to_excel(writer,"Errors",encoding='utf-8-sig',index=True,engine="openpyxl")
+
     return dir
     # return output.to_csv(encoding='utf-8-sig',index=False)

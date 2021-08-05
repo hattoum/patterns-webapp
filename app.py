@@ -22,7 +22,6 @@ def index():
             #Encoding csv file with utf_8_sig for Arabic, Vietnamese, etc..
             # res = Response(csv.encode("utf-8-sig"),mimetype="text/csv;charset=UTF-8",headers={"Content-disposition":"attachment; filename=results.csv"})
             res = send_file(dir)
-            os.remove(dir)
         except Exception as e:
             res = str(e)
 
