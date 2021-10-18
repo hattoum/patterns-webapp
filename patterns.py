@@ -142,6 +142,7 @@ def create_csv(login,password,uuid,lang,sheet):
     # %%
     #Open script excel sheet and save entity and pattern column names
     df_raw = format_test_sheet(open_excel())
+    print("----------------------------\n",df_raw)
     entity_col = df_raw.columns[-1]
     pattern_col = df_raw.columns[0]
     # %%
@@ -150,6 +151,7 @@ def create_csv(login,password,uuid,lang,sheet):
     df_raw[entity_col] = df_raw[entity_col].apply(clean_entities)
     # %%
     #Split entity column into separate entity and value columns
+    
     df_raw["entities_"] = df_raw[entity_col].map(lambda x: x[0])
     df_raw["values_"] = df_raw[entity_col].map(lambda x: x[1])
     # %%
