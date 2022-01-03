@@ -3,16 +3,26 @@ import requests
 from itertools import zip_longest
 from requests.models import HTTPBasicAuth
 import numpy as np
-import re
+import re as re
+# import re2 as re
 import os
+import time
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.filterwarnings("ignore")
 import pandas as pd
 
 # %%
+login = "hamer@voctiv.com"
+password = "3ZfRxevSHUNTN54"
+uuid = "3aabd71f-e924-4d26-a68c-3989f50c69c6"
+lang = "ar-SA"
+# %%
+start_time = ""
 def create_csv(login,password,uuid,lang,sheet):
-    #Get access token with a POST request and CMS credentials 
+    #Get access token with a POST request and CMS credentials
+# %% 
+    start_time = time.time()
     ext = "https://api-v3.neuro.net/api/v2/ext/auth"
     body = {"username":login,"password":password}
     post = requests.post(ext, auth=HTTPBasicAuth(body["username"],body["password"]))
@@ -25,22 +35,43 @@ def create_csv(login,password,uuid,lang,sheet):
     token = auth_data["token"]
     params = {"agent_uuid":uuid}
     headers = {"Authorization":"Bearer " +token}
-    res_ent = requests.get("https://api-v3.neuro.net/api/v2/nlu/entity", params=params, headers=headers)
-    res_int = requests.get("https://api-v3.neuro.net/api/v2/nlu/intent", params=params, headers=headers)
-
-    
-
-    # %%
-    if(res_ent.status_code == 200 or res_int.status_code == 200):
-        print("Request successful")
+# %%
+    uuid_ent = requests.get("https://cms-v3.neuro.net/api/v2/nlu/entity/agent/names",params=params,headers=headers)
+    uuid_int = requests.get("https://cms-v3.neuro.net/api/v2/nlu/intent/agent/names",params=params,headers=headers)
+    print(uuid_ent.json())
+# %%
+    if(uuid_ent.status_code == 200 or uuid_int.status_code == 200):
+        print("Request successful - ",str(time.time()-start_time))
     else:
         raise AssertionError("Failed to get data. Make sure UUID includes no trailing or following characters")    
-    # %%
-    #Extract relevant data out of the response json
-    relevant_columns = ["name","pattern","language"]
-    raw_ent = pd.DataFrame(res_ent.json()["data"],columns=relevant_columns)
-    raw_int = pd.DataFrame(res_int.json()["data"],columns=relevant_columns)
+    
+    uuid_ent_list = [entity["uuid"] for entity in uuid_ent.json()["data"]]
+    uuid_int_list = [intent["uuid"] for intent in uuid_int.json()["data"]]
+
+    def get_entity_data(name):
+        return requests.get("https://cms-v3.neuro.net/api/v2/nlu/entity/agent/names/"+name,params=params,headers=headers).json()["data"]
+
+    def get_intent_data(name):
+        return requests.get("https://cms-v3.neuro.net/api/v2/nlu/intent/agent/names/"+name,params=params,headers=headers).json()["data"]
+        
+    entities = []
+    intents = []
+    for entity in uuid_ent_list:
+        for entry in get_entity_data(entity):
+            data = {"name":entry["name"],"pattern":entry["pattern"],"language":entry["language"]}
+            if(data["language"]==lang):
+                entities.append(data)
+
+    for intent in uuid_int_list:
+        for entry in get_intent_data(intent):
+            data = {"name":entry["name"],"pattern":entry["pattern"],"language":entry["language"]}
+            if(data["language"]==lang):
+                intents.append(data)
+    # %%            
+    raw_ent = pd.DataFrame(entities)
+    raw_int = pd.DataFrame(intents)
     raw_data = pd.concat((raw_ent,raw_int))
+
     # %%
     def split_raw_patterns(patterns):
         """Splits raw patterns into separate patterns and entity values"""
@@ -51,7 +82,6 @@ def create_csv(login,password,uuid,lang,sheet):
         if(plist[-1]==""):
             plist.pop()
 
-        # print(plist)
         return plist
     
     
@@ -78,22 +108,18 @@ def create_csv(login,password,uuid,lang,sheet):
     def format_by_lang(df,language):
         """Subsets response data by language and returns a DataFrame with the 
         name of the entity, associated patterns in a list of tuples, and language"""
-        try:
-            lang_df = df[df["language"]==language].set_index("name")
-            lang_df.iloc[0]
-            lang_df["pattern"] = lang_df["pattern"].apply(split_and_group)
-            return lang_df
-        except:
-            raise AssertionError("Language \""+language+"\" not found in agent.<br>Please make sure you are using the correct language code and the right agent UUID")
+        # try:
+        lang_df = df.set_index("name")
+        lang_df["pattern"] = lang_df["pattern"].apply(split_and_group)
+        return lang_df
+        # except:
+        #     raise AssertionError("Language \""+language+"\" not found in agent.<br>Please make sure you are using the correct language code and the right agent UUID")
 
     # %%
     #Setting the df to use for matching
     lang_df = format_by_lang(raw_data,lang)
     validity_df = lang_df.pattern.apply(validate_patterns).dropna().to_frame()
     validity_df.index = validity_df.index.rename("Entity/Intent")
-
-    print(validity_df)
-    # print(lang_df.pattern.apply(validate_patterns))
     # %%
     def open_excel():
         """Opens excel sheet and removes empty cells
@@ -142,7 +168,8 @@ def create_csv(login,password,uuid,lang,sheet):
     # %%
     #Open script excel sheet and save entity and pattern column names
     df_raw = format_test_sheet(open_excel())
-    print("----------------------------\n",df_raw)
+    print("Excel sheet opened - ",str(time.time()-start_time))
+    # print("----------------------------\n",df_raw)
     entity_col = df_raw.columns[-1]
     pattern_col = df_raw.columns[0]
     # %%
@@ -154,28 +181,40 @@ def create_csv(login,password,uuid,lang,sheet):
     
     df_raw["entities_"] = df_raw[entity_col].map(lambda x: x[0])
     df_raw["values_"] = df_raw[entity_col].map(lambda x: x[1])
+    print("Created final sheet template - ",str(time.time()-start_time))
     # %%
 
     def match_patterns(str_pattern):
         """Returns a list of all matched entities for every script pattern"""
         search = []
+        times = []
 
+        before = time.time()
         for name in lang_df.index:
+            # print(str_pattern, " - ",name, " ---------------------------")
             for pattern in lang_df.loc[name]["pattern"]:
-                try:
-                    match = re.search(pattern[0], str_pattern,flags=re.IGNORECASE)
-                except:
-                    match = None
+                match = re.search(pattern[0], str_pattern,flags=re.IGNORECASE)
+                
                 if(match!=None):
+
                     search.append([pattern[0],name+"="+str(pattern[1])])
+                    
+                    # print("bork")
                     break
-        
+        after = time.time()
+        times.append(after-before)
+
         matches = list(filter(lambda x: x[1]!=None,search))
+        # print(np.average(times))
         return matches
+    
+    # def match_patterns(str_pattern):
+
     # %%
     #Create a "matches" column for the DataFrame from the script sheet
     df_raw["matches"]= df_raw[pattern_col].apply(match_patterns)
     output = df_raw[[pattern_col]]
+    print("Created matched column - ",str(time.time()-start_time))
 
     #Joins the [entity, value] lists in a single string entity=value 
     join_entities = lambda x: "=".join(x)   

@@ -12,18 +12,19 @@ def index():
     errors = ""
     if(request.method == "POST"):
         login = request.form["login"]
+        print(login)
         password = request.form["password"]
         uuid = request.form["uuid"]
         lang = request.form["lang"]
         sheet = request.files["sheet"]
 
-        # try:
-        dir = create_csv(login,password,uuid,lang,sheet)
+        try:
+            dir = create_csv(login,password,uuid,lang,sheet)
             #Encoding csv file with utf_8_sig for Arabic, Vietnamese, etc..
             # res = Response(csv.encode("utf-8-sig"),mimetype="text/csv;charset=UTF-8",headers={"Content-disposition":"attachment; filename=results.csv"})
-        res = send_file(dir)
-        # except Exception as e:
-        #     res = str(e)
+            res = send_file(dir)
+        except Exception as e:
+            res = str(e)
 
         # print(res)
         
